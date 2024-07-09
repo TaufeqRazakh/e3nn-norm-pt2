@@ -3,11 +3,11 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name="e3nn"
+name="e3nn-norm-pt2"
 requires-python = ">=3.7"
 dynamic = ["version", "readme"]
 license = {text = "MIT"}
-description = "Equivariant convolutional neural networks for the group E(3) of 3 dimensional rotations, translations, and mirrors."
+description = "reproducer for graph break in e3nn's norm function"
 classifiers = [
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",

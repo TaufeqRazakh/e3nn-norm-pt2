@@ -1,7 +1,7 @@
 import torch
 
-from .irreps import Irreps as o3
-from .TensorProduct import TensorProduct as o3
+from ._irreps import Irreps as o3
+from ._TensorProduct import TensorProduct as o3
 
 class Norm(torch.nn.Module):
     r"""Norm of each irrep in a direct sum of irreps.
