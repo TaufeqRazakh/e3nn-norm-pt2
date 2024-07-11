@@ -1,15 +1,7 @@
 import itertools
 import collections
 from typing import List, Union
-
 import torch
-
-from e3nn.math import direct_sum, perm
-
-# These imports avoid cyclic reference from o3 itself
-from . import _rotation
-from . import _wigner
-
 
 class Irrep(tuple):
     r"""Irreducible representation of :math:`O(3)`
@@ -109,110 +101,6 @@ class Irrep(tuple):
 
             if l == lmax:
                 break
-
-    def D_from_angles(self, alpha, beta, gamma, k=None) -> torch.Tensor:
-        r"""Matrix :math:`p^k D^l(\alpha, \beta, \gamma)`
-
-        (matrix) Representation of :math:`O(3)`. :math:`D` is the representation of :math:`SO(3)`, see `wigner_D`.
-
-        Parameters
-        ----------
-        alpha : `torch.Tensor`
-            tensor of shape :math:`(...)`
-            Rotation :math:`\alpha` around Y axis, applied third.
-
-        beta : `torch.Tensor`
-            tensor of shape :math:`(...)`
-            Rotation :math:`\beta` around X axis, applied second.
-
-        gamma : `torch.Tensor`
-            tensor of shape :math:`(...)`
-            Rotation :math:`\gamma` around Y axis, applied first.
-
-        k : `torch.Tensor`, optional
-            tensor of shape :math:`(...)`
-            How many times the parity is applied.
-
-        Returns
-        -------
-        `torch.Tensor`
-            tensor of shape :math:`(..., 2l+1, 2l+1)`
-
-        See Also
-        --------
-        o3.wigner_D
-        Irreps.D_from_angles
-        """
-        if k is None:
-            k = torch.zeros_like(alpha)
-
-        alpha, beta, gamma, k = torch.broadcast_tensors(alpha, beta, gamma, k)
-        return _wigner.wigner_D(self.l, alpha, beta, gamma) * self.p ** k[..., None, None]
-
-    def D_from_quaternion(self, q, k=None) -> torch.Tensor:
-        r"""Matrix of the representation, see `Irrep.D_from_angles`
-
-        Parameters
-        ----------
-        q : `torch.Tensor`
-            tensor of shape :math:`(..., 4)`
-
-        k : `torch.Tensor`, optional
-            tensor of shape :math:`(...)`
-
-        Returns
-        -------
-        `torch.Tensor`
-            tensor of shape :math:`(..., 2l+1, 2l+1)`
-        """
-        return self.D_from_angles(*_rotation.quaternion_to_angles(q), k)
-
-    def D_from_matrix(self, R) -> torch.Tensor:
-        r"""Matrix of the representation, see `Irrep.D_from_angles`
-
-        Parameters
-        ----------
-        R : `torch.Tensor`
-            tensor of shape :math:`(..., 3, 3)`
-
-        k : `torch.Tensor`, optional
-            tensor of shape :math:`(...)`
-
-        Returns
-        -------
-        `torch.Tensor`
-            tensor of shape :math:`(..., 2l+1, 2l+1)`
-
-        Examples
-        --------
-        >>> m = Irrep(1, -1).D_from_matrix(-torch.eye(3))
-        >>> m.long()
-        tensor([[-1,  0,  0],
-                [ 0, -1,  0],
-                [ 0,  0, -1]])
-        """
-        d = torch.det(R).sign()
-        R = d[..., None, None] * R
-        k = (1 - d) / 2
-        return self.D_from_angles(*_rotation.matrix_to_angles(R), k)
-
-    def D_from_axis_angle(self, axis, angle) -> torch.Tensor:
-        r"""Matrix of the representation, see `Irrep.D_from_angles`
-
-        Parameters
-        ----------
-        axis : `torch.Tensor`
-            tensor of shape :math:`(..., 3)`
-
-        angle : `torch.Tensor`
-            tensor of shape :math:`(...)`
-
-        Returns
-        -------
-        `torch.Tensor`
-            tensor of shape :math:`(..., 2l+1, 2l+1)`
-        """
-        return self.D_from_angles(*_rotation.axis_angle_to_angles(axis, angle))
 
     @property
     def dim(self) -> int:
@@ -576,35 +464,6 @@ class Irreps(tuple):
         out = [(mul, ir) for mul, ir in self if mul > 0]
         return Irreps(out)
 
-    def sort(self):
-        r"""Sort the representations.
-
-        Returns
-        -------
-        irreps : `e3nn.o3.Irreps`
-        p : tuple of int
-        inv : tuple of int
-
-        Examples
-        --------
-
-        >>> Irreps("1e + 0e + 1e").sort().irreps
-        1x0e+1x1e+1x1e
-
-        >>> Irreps("2o + 1e + 0e + 1e").sort().p
-        (3, 1, 0, 2)
-
-        >>> Irreps("2o + 1e + 0e + 1e").sort().inv
-        (2, 1, 3, 0)
-        """
-        Ret = collections.namedtuple("sort", ["irreps", "p", "inv"])
-        out = [(ir, i, mul) for i, (mul, ir) in enumerate(self)]
-        out = sorted(out)
-        inv = tuple(i for _, i, _ in out)
-        p = perm.inverse(inv)
-        irreps = Irreps([(mul, ir) for ir, _, mul in out])
-        return Ret(irreps, p, inv)
-
     @property
     def dim(self) -> int:
         return sum(mul * ir.dim for mul, ir in self)
@@ -625,81 +484,3 @@ class Irreps(tuple):
 
     def __repr__(self) -> str:
         return "+".join(f"{mul_ir}" for mul_ir in self)
-
-    def D_from_angles(self, alpha, beta, gamma, k=None):
-        r"""Matrix of the representation
-
-        Parameters
-        ----------
-        alpha : `torch.Tensor`
-            tensor of shape :math:`(...)`
-
-        beta : `torch.Tensor`
-            tensor of shape :math:`(...)`
-
-        gamma : `torch.Tensor`
-            tensor of shape :math:`(...)`
-
-        k : `torch.Tensor`, optional
-            tensor of shape :math:`(...)`
-
-        Returns
-        -------
-        `torch.Tensor`
-            tensor of shape :math:`(..., \mathrm{dim}, \mathrm{dim})`
-        """
-        return direct_sum(*[ir.D_from_angles(alpha, beta, gamma, k) for mul, ir in self for _ in range(mul)])
-
-    def D_from_quaternion(self, q, k=None):
-        r"""Matrix of the representation
-
-        Parameters
-        ----------
-        q : `torch.Tensor`
-            tensor of shape :math:`(..., 4)`
-
-        k : `torch.Tensor`, optional
-            tensor of shape :math:`(...)`
-
-        Returns
-        -------
-        `torch.Tensor`
-            tensor of shape :math:`(..., \mathrm{dim}, \mathrm{dim})`
-        """
-        return self.D_from_angles(*_rotation.quaternion_to_angles(q), k)
-
-    def D_from_matrix(self, R):
-        r"""Matrix of the representation
-
-        Parameters
-        ----------
-        R : `torch.Tensor`
-            tensor of shape :math:`(..., 3, 3)`
-
-        Returns
-        -------
-        `torch.Tensor`
-            tensor of shape :math:`(..., \mathrm{dim}, \mathrm{dim})`
-        """
-        d = torch.det(R).sign()
-        R = d[..., None, None] * R
-        k = (1 - d) / 2
-        return self.D_from_angles(*_rotation.matrix_to_angles(R), k)
-
-    def D_from_axis_angle(self, axis, angle):
-        r"""Matrix of the representation
-
-        Parameters
-        ----------
-        axis : `torch.Tensor`
-            tensor of shape :math:`(..., 3)`
-
-        angle : `torch.Tensor`
-            tensor of shape :math:`(...)`
-
-        Returns
-        -------
-        `torch.Tensor`
-            tensor of shape :math:`(..., \mathrm{dim}, \mathrm{dim})`
-        """
-        return self.D_from_angles(*_rotation.axis_angle_to_angles(axis, angle))
