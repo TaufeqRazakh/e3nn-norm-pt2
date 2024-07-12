@@ -1,7 +1,7 @@
 import torch
 
-from ._irreps import Irreps as o3
-from ._TensorProduct import TensorProduct as o3
+from _irreps import Irreps
+from _TensorProduct import TensorProduct
 
 
 class Norm(torch.nn.Module):
@@ -9,7 +9,7 @@ class Norm(torch.nn.Module):
 
     Parameters
     ----------
-    irreps_in : `e3nn.o3.Irreps`
+    irreps_in : `e3nn.Irreps`
         representation of the input
 
     squared : bool, optional
@@ -28,12 +28,12 @@ class Norm(torch.nn.Module):
     def __init__(self, irreps_in, squared: bool = False) -> None:
         super().__init__()
 
-        irreps_in = o3.Irreps(irreps_in).simplify()
-        irreps_out = o3.Irreps([(mul, "0e") for mul, _ in irreps_in])
+        irreps_in = Irreps(irreps_in).simplify()
+        irreps_out = Irreps([(mul, "0e") for mul, _ in irreps_in])
 
         instr = [(i, i, i, "uuu", False, ir.dim) for i, (mul, ir) in enumerate(irreps_in)]
 
-        self.tp = o3.TensorProduct(irreps_in, irreps_in, irreps_out, instr, irrep_normalization="component")
+        self.tp = TensorProduct(irreps_in, irreps_in, irreps_out, instr, irrep_normalization="component")
 
         self.irreps_in = irreps_in
         self.irreps_out = irreps_out.simplify()

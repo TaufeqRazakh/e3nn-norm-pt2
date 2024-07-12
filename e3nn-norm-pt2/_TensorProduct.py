@@ -5,14 +5,10 @@ import warnings
 import torch
 from torch import fx
 
-import e3nn
-from e3nn import o3
-from e3nn.util import prod
-from e3nn.util.codegen import CodeGenMixin
-from e3nn.util.jit import compile_mode
-from ._codegen import codegen_tensor_product_left_right, codegen_tensor_product_right
-from ._instruction import Instruction
-
+from _irreps import Irreps as o3
+from _codegen import codegen_tensor_product_left_right, codegen_tensor_product_right
+from _commons import prod
+from _mixins import CodeGenMixin
 
 # A list, in order of priority, of codegen providers for the tensor product.
 # If a provider does not support the parameters it is given, it should
@@ -21,7 +17,6 @@ _CODEGEN_PROVIDERS_LEFT_RIGHT: List[Callable] = [codegen_tensor_product_left_rig
 _CODEGEN_PROVIDERS_RIGHT: List[Callable] = [codegen_tensor_product_right]
 
 
-@compile_mode("script")
 class TensorProduct(CodeGenMixin, torch.nn.Module):
     r"""Tensor product with parametrized paths.
 

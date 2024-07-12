@@ -3,12 +3,11 @@ from math import sqrt
 from typing import List
 
 import torch
-from e3nn import o3
-from e3nn.util import prod
 from opt_einsum_fx import optimize_einsums_full
 from torch import fx
 
-from ._instruction import Instruction
+from _irreps import Irreps
+from _commons import Instruction, prod
 
 
 def _sum_tensors(xs: List[torch.Tensor], shape: torch.Size, like: torch.Tensor) -> torch.Tensor:
@@ -21,9 +20,9 @@ def _sum_tensors(xs: List[torch.Tensor], shape: torch.Size, like: torch.Tensor) 
 
 
 def codegen_tensor_product_left_right(
-    irreps_in1: o3.Irreps,
-    irreps_in2: o3.Irreps,
-    irreps_out: o3.Irreps,
+    irreps_in1: Irreps,
+    irreps_in2: Irreps,
+    irreps_out: Irreps,
     instructions: List[Instruction],
     shared_weights: bool = False,
     specialized_code: bool = True,
@@ -324,7 +323,7 @@ def codegen_tensor_product_left_right(
             graph.erase_node(w3j.node)
         else:
             if w3j_name not in constants:
-                constants[w3j_name] = o3.wigner_3j(mul_ir_in1.ir.l, mul_ir_in2.ir.l, mul_ir_out.ir.l)
+                constants[w3j_name] = wigner_3j(mul_ir_in1.ir.l, mul_ir_in2.ir.l, mul_ir_out.ir.l)
 
     # = Return the result =
     outputs = [
@@ -398,9 +397,9 @@ def codegen_tensor_product_left_right(
 
 
 def codegen_tensor_product_right(
-    irreps_in1: o3.Irreps,
-    irreps_in2: o3.Irreps,
-    irreps_out: o3.Irreps,
+    irreps_in1: Irreps,
+    irreps_in2: Irreps,
+    irreps_out: Irreps,
     instructions: List[Instruction],
     shared_weights: bool = False,
     specialized_code: bool = True,
@@ -642,7 +641,7 @@ def codegen_tensor_product_right(
             graph.erase_node(w3j.node)
         else:
             if w3j_name not in constants:
-                constants[w3j_name] = o3.wigner_3j(mul_ir_in1.ir.l, mul_ir_in2.ir.l, mul_ir_out.ir.l)
+                constants[w3j_name] = wigner_3j(mul_ir_in1.ir.l, mul_ir_in2.ir.l, mul_ir_out.ir.l)
 
     # = Return the result =
     outputs = [
