@@ -33,16 +33,16 @@ class CodeGenMixin:
             self.__codegen__ = []
         self.__codegen__.extend(funcs.keys())
 
-        opt_defaults = e3nn.get_optimization_defaults()
+        # opt_defaults = e3nn.get_optimization_defaults()
 
         for fname, graphmod in funcs.items():
             assert isinstance(graphmod, fx.GraphModule)
 
-            if opt_defaults["jit_script_fx"]:
-                scriptmod = torch.jit.script(jitable(graphmod))
-                assert isinstance(scriptmod, torch.jit.ScriptModule)
-            else:
-                scriptmod = graphmod
+            # if opt_defaults["jit_script_fx"]:
+            scriptmod = torch.jit.script(jitable(graphmod))
+            assert isinstance(scriptmod, torch.jit.ScriptModule)
+            # else:
+            #     scriptmod = graphmod
 
             # Add the ScriptModule as a submodule so it can be called
             self.add_module(fname, scriptmod)

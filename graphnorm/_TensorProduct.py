@@ -332,10 +332,8 @@ class TensorProduct(CodeGenMixin, torch.nn.Module):
         self.internal_weights = internal_weights
         self.shared_weights = shared_weights
 
-        opt_defaults = e3nn.get_optimization_defaults()
-        self._specialized_code = _specialized_code if _specialized_code is not None else opt_defaults["specialized_code"]
-        self._optimize_einsums = _optimize_einsums if _optimize_einsums is not None else opt_defaults["optimize_einsums"]
-        del opt_defaults
+        self._specialized_code = _specialized_code if _specialized_code is not None else True
+        self._optimize_einsums = _optimize_einsums if _optimize_einsums is not None else True
 
         # Generate the actual tensor product code
         if compile_left_right:
