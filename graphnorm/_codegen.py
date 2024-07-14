@@ -6,8 +6,8 @@ import torch
 from opt_einsum_fx import optimize_einsums_full
 from torch import fx
 
-from _irreps import Irreps
-from _commons import Instruction, prod
+from ._irreps import Irreps
+from ._commons import Instruction, prod
 
 
 def _sum_tensors(xs: List[torch.Tensor], shape: torch.Size, like: torch.Tensor) -> torch.Tensor:

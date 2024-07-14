@@ -1,7 +1,7 @@
 import torch
 
-from _irreps import Irreps
-from _TensorProduct import TensorProduct
+from ._irreps import Irreps
+from ._TensorProduct import TensorProduct
 
 
 class Norm(torch.nn.Module):
@@ -15,13 +15,6 @@ class Norm(torch.nn.Module):
     squared : bool, optional
         Whether to return the squared norm. ``False`` by default, i.e. the norm itself (sqrt of squared norm) is returned.
 
-    Examples
-    --------
-    Compute the norms of 17 vectors.
-
-    >>> norm = Norm("17x1o")
-    >>> norm(torch.randn(17 * 3)).shape
-    torch.Size([17])
     """
     squared: bool
 

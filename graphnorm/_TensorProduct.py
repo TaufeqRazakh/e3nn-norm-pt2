@@ -5,10 +5,10 @@ import warnings
 import torch
 from torch import fx
 
-from _irreps import Irreps as o3
-from _codegen import codegen_tensor_product_left_right, codegen_tensor_product_right
-from _commons import prod
-from _mixins import CodeGenMixin
+from ._irreps import Irreps
+from ._codegen import codegen_tensor_product_left_right, codegen_tensor_product_right
+from ._commons import prod, Instruction
+from ._mixins import CodeGenMixin
 
 # A list, in order of priority, of codegen providers for the tensor product.
 # If a provider does not support the parameters it is given, it should
@@ -22,13 +22,13 @@ class TensorProduct(CodeGenMixin, torch.nn.Module):
 
     Parameters
     ----------
-    irreps_in1 : `e3nn.o3.Irreps`
+    irreps_in1 : `e3nn.Irreps`
         Irreps for the first input.
 
-    irreps_in2 : `e3nn.o3.Irreps`
+    irreps_in2 : `e3nn.Irreps`
         Irreps for the second input.
 
-    irreps_out : `e3nn.o3.Irreps`
+    irreps_out : `e3nn.Irreps`
         Irreps for the output.
 
     instructions : list of tuple
@@ -64,7 +64,7 @@ class TensorProduct(CodeGenMixin, torch.nn.Module):
         normalized by the number of paths.
 
     internal_weights : bool
-        whether the `e3nn.o3.TensorProduct` contains its learnable weights as a parameter
+        whether the `e3nn.TensorProduct` contains its learnable weights as a parameter
 
     shared_weights : bool
         whether the learnable weights are shared among the input's extra dimensions
@@ -118,7 +118,7 @@ class TensorProduct(CodeGenMixin, torch.nn.Module):
 
     Example of a dot product:
 
-    >>> irreps = o3.Irreps("3x0e + 4x0o + 1e + 2o + 3o")
+    >>> irreps = Irreps("3x0e + 4x0o + 1e + 2o + 3o")
     >>> module = TensorProduct(irreps, irreps, "0e", [
     ...     (i, i, 0, 'uuw', False)
     ...     for i, (mul, ir) in enumerate(irreps)
@@ -146,11 +146,11 @@ class TensorProduct(CodeGenMixin, torch.nn.Module):
 
     Tensor Product using the xavier uniform initialization:
 
-    >>> irreps_1 = o3.Irreps("5x0e + 10x1o + 1x2e")
-    >>> irreps_2 = o3.Irreps("5x0e + 10x1o + 1x2e")
-    >>> irreps_out = o3.Irreps("5x0e + 10x1o + 1x2e")
+    >>> irreps_1 = Irreps("5x0e + 10x1o + 1x2e")
+    >>> irreps_2 = Irreps("5x0e + 10x1o + 1x2e")
+    >>> irreps_out = Irreps("5x0e + 10x1o + 1x2e")
     >>> # create a Fully Connected Tensor Product
-    >>> module = o3.TensorProduct(
+    >>> module = TensorProduct(
     ...     irreps_1,
     ...     irreps_2,
     ...     irreps_out,
@@ -188,9 +188,9 @@ class TensorProduct(CodeGenMixin, torch.nn.Module):
 
     def __init__(
         self,
-        irreps_in1: o3.Irreps,
-        irreps_in2: o3.Irreps,
-        irreps_out: o3.Irreps,
+        irreps_in1: Irreps,
+        irreps_in2: Irreps,
+        irreps_out: Irreps,
         instructions: List[tuple],
         in1_var: Optional[Union[List[float], torch.Tensor]] = None,
         in2_var: Optional[Union[List[float], torch.Tensor]] = None,
@@ -221,9 +221,9 @@ class TensorProduct(CodeGenMixin, torch.nn.Module):
         assert irrep_normalization in ["component", "norm", "none"]
         assert path_normalization in ["element", "path", "none"]
 
-        self.irreps_in1 = o3.Irreps(irreps_in1)
-        self.irreps_in2 = o3.Irreps(irreps_in2)
-        self.irreps_out = o3.Irreps(irreps_out)
+        self.irreps_in1 = Irreps(irreps_in1)
+        self.irreps_in2 = Irreps(irreps_in2)
+        self.irreps_out = Irreps(irreps_out)
         del irreps_in1, irreps_in2, irreps_out
 
         instructions = [x if len(x) == 6 else x + (1.0,) for x in instructions]
@@ -598,7 +598,7 @@ class TensorProduct(CodeGenMixin, torch.nn.Module):
     def visualize(
         self, weight: Optional[torch.Tensor] = None, plot_weight: bool = True, aspect_ratio=1, ax=None
     ):  # pragma: no cover
-        r"""Visualize the connectivity of this `e3nn.o3.TensorProduct`
+        r"""Visualize the connectivity of this `e3nn.TensorProduct`
 
         Parameters
         ----------
