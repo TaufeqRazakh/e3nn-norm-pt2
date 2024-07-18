@@ -14,3 +14,4 @@ def test_norm_no_graph_break(irreps_in, squared) -> None:
     x = torch.randn(mod.irreps_in.dim)
     torch._logging.set_logs(graph_breaks=True, bytecode=True, recompiles=True, graph=True)
     assert_no_graph_break(mod,x)
+    # torch.compile(mod)
